@@ -171,7 +171,7 @@ var ProxyLists = module.exports = {
 		}, function(oldKey, newKey) {
 			var optionValue = options[oldKey];
 			if (!_.isUndefined(optionValue) && !_.isNull(optionValue) && _.isArray(optionValue)) {
-				sourcerOptions.filter.include[newKey] = _.clone(optionValue);
+				sourcerOptions.filter.include[newKey] = _.clone(optionValue.map(function(value) { return value.toLowerCase() }));
 			}
 		});
 
@@ -180,7 +180,7 @@ var ProxyLists = module.exports = {
 		}, function(oldKey, newKey) {
 			var optionValue = options[oldKey];
 			if (!_.isUndefined(optionValue) && !_.isNull(optionValue) && _.isArray(optionValue)) {
-				sourcerOptions.filter.exclude[newKey] = _.clone(optionValue);
+				sourcerOptions.filter.exclude[newKey] = _.clone(optionValue.map(function(value) { return value.toLowerCase() }));
 			}
 		});
 
