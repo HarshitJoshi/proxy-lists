@@ -1,6 +1,6 @@
 {
   "name": "proxy-lists",
-  "version": "1.16.0",
+  "version": "1.18.0",
   "description": "Get proxies from publicly available proxy lists.",
   "keywords": [
     "proxies",
@@ -10,10 +10,11 @@
   ],
   "main": "index.js",
   "scripts": {
-    "lint": "eslint --config .eslintrc.js *.js sources/*.js test/**/*.js",
-    "prepublish": "npm run test # runs before `npm publish`",
-    "pretest": "npm run lint # runs before `npm test`",
-    "test": "mocha test/unit/ --recursive --reporter spec --ui bdd"
+    "lint": "./node_modules/.bin/eslint --config .eslintrc.js *.js sources/*.js test/**/*.js",
+    "prepublish": "npm run test",
+    "pretest": "npm run lint",
+    "test": "npm run test:unit",
+    "test:unit": "./node_modules/.bin/mocha test/unit/ --recursive --reporter spec --ui bdd"
   },
   "bin": {
     "proxy-lists": "cli.js"
@@ -32,16 +33,19 @@
     "url": "https://github.com/chill117/proxy-lists/issues"
   },
   "dependencies": {
-    "async": "2.6.1",
-    "cheerio": "1.0.0-rc.2",
-    "commander": "2.19.0",
-    "data-sourcer": "1.6.0",
-    "geoip-native-lite": "0.3.0",
+    "async": "3.1.0",
+    "cheerio": "1.0.0-rc.3",
+    "commander": "2.20.0",
+    "data-sourcer": "1.7.2",
+    "geoip-native-lite": "1.0.0",
     "request": "2.88.0",
     "underscore": "1.9.1",
     "xml2js": "0.4.19"
   },
   "devDependencies": {
-    "chai": "4.2.0"
+    "chai": "4.2.0",
+    "eslint": "6.0.1",
+    "mkdirp": "0.5.1",
+    "mocha": "6.1.4"
   }
 }

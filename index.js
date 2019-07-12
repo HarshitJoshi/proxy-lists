@@ -11,6 +11,9 @@ GeoIpNativeLite.loadDataSync({ ipv4: true, ipv6: true, cache: true });
 var ProxyLists = module.exports = {
 
 	sourcer: new DataSourcer({
+		// browser: {
+		// 	headless: false,
+		// },
 		getDataMethodName: 'getProxies',
 		sourcesDir: process.env.PROXY_LISTS_SOURCES_DIR || path.join(__dirname, 'sources'),
 	}),
@@ -114,7 +117,6 @@ var ProxyLists = module.exports = {
 
 	_protocols: ['http', 'https', 'socks4', 'socks5'],
 	_anonymityLevels: ['transparent', 'anonymous', 'elite'],
-	_countries: require('./countries'),
 	_ipTypes: ['ipv4', 'ipv6'],
 
 	// Get proxies from all sources.
@@ -156,7 +158,15 @@ var ProxyLists = module.exports = {
 	toSourcerOptions: function(options) {
 
 		options = options || {};
-		var sourcerOptions = _.omit(options, 'filterMode', 'countries', 'countriesBlackList', 'protocols', 'anonymityLevels', 'ipTypes');
+
+		var sourcerOptions = _.omit(options,
+			'filterMode',
+			'countries',
+			'countriesBlackList',
+			'protocols',
+			'anonymityLevels',
+			'ipTypes'
+		);
 
 		sourcerOptions.filter = {
 			mode: options.filterMode || this.defaultOptions.filterMode,
@@ -171,7 +181,7 @@ var ProxyLists = module.exports = {
 		}, function(oldKey, newKey) {
 			var optionValue = options[oldKey];
 			if (!_.isUndefined(optionValue) && !_.isNull(optionValue) && _.isArray(optionValue)) {
-				sourcerOptions.filter.include[newKey] = _.clone(optionValue.map(function(value) { return value.toLowerCase() }));
+				sourcerOptions.filter.include[newKey] = _.invoke(optionValue, 'toLowerCase');
 			}
 		});
 
@@ -180,7 +190,7 @@ var ProxyLists = module.exports = {
 		}, function(oldKey, newKey) {
 			var optionValue = options[oldKey];
 			if (!_.isUndefined(optionValue) && !_.isNull(optionValue) && _.isArray(optionValue)) {
-				sourcerOptions.filter.exclude[newKey] = _.clone(optionValue.map(function(value) { return value.toLowerCase() }));
+				sourcerOptions.filter.exclude[newKey] = _.invoke(optionValue, 'toLowerCase');
 			}
 		});
 
@@ -206,13 +216,24 @@ var ProxyLists = module.exports = {
 			validateIp: true
 		});
 
-		// 'ipAddress' and 'port' are required.
-		return !!proxy.ipAddress && (!options.validateIp || this.isValidIpAddress(proxy.ipAddress)) &&
-				!!proxy.port && this.isValidPort(proxy.port) &&
-				// 'protocols' is not required, but if it's set it should be valid.
-				(_.isUndefined(proxy.protocols) || this.isValidProxyProtocols(proxy.protocols)) &&
-				// 'anonymityLevel' is not required, but if it's set it should be valid.
-				(_.isUndefined(proxy.anonymityLevel) || this.isValidAnonymityLevel(proxy.anonymityLevel));
+		// 'ipAddress' is required.
+		if (!proxy.ipAddress) return false;
+		// Valid 'ipAddress' is optional.
+		if (options.validateIp && !this.isValidIpAddress(proxy.ipAddress)) return false;
+		// 'port' is required.
+		if (!proxy.port) return false;
+		// Valid port is required.
+		if (!this.isValidPort(proxy.port)) return false;
+		// 'protocols' is not required, but if it's set it should be valid.
+		if (!_.isUndefined(proxy.protocols) && !_.isNull(proxy.protocols)) {
+			if (!this.isValidProxyProtocols(proxy.protocols)) return false;
+		}
+		// 'anonymityLevel' is not required, but if it's set it should be valid.
+		if (!_.isUndefined(proxy.anonymityLevel) && !_.isNull(proxy.anonymityLevel)) {
+			if (!this.isValidAnonymityLevel(proxy.anonymityLevel)) return false;
+		}
+		// Valid proxy.
+		return true;
 	},
 
 	isValidPort: function(port) {
@@ -222,14 +243,14 @@ var ProxyLists = module.exports = {
 
 	isValidProxyProtocols: function(protocols) {
 
-		return _.isArray(protocols) && protocols.length > 0 && _.every(protocols, function(protocol) {
+		return _.isArray(protocols) && _.every(protocols, function(protocol) {
 			return ProxyLists.isValidProxyProtocol(protocol);
 		});
 	},
 
 	isValidProxyProtocol: function(protocol) {
 
-		return _.contains(this._protocols, protocol);
+		return _.isString(protocol) && _.contains(this._protocols, protocol);
 	},
 
 	isValidAnonymityLevel: function(anonymityLevel) {
@@ -242,16 +263,3 @@ var ProxyLists = module.exports = {
 		return net.isIP(ipAddress) !== 0;
 	}
 };
-
-// For manual testing sources:
-// ProxyLists.getProxies({
-// 	sourcesWhiteList: ['rosinstrument'],
-// 	sample: true,
-// 	series: true,
-// })
-// 	.on('data', console.log)
-// 	.on('error', console.log)
-// 	.once('end', function() {
-// 		console.log('done!');
-// 		process.exit();
-// 	});

@@ -16,21 +16,17 @@ module.exports = {
 	},
 	abstract: 'scraper-paginated-list',
 	config: {
-		startPageUrl: 'https://www.cool-proxy.net/proxies/http_proxy_list',
+		startPageUrl: 'https://www.cool-proxy.net/',
 		selectors: {
-			item: '#main table tbody tr',
+			item: '#main table tbody tr:not(:first-child)',
 			itemAttributes: {
 				ipAddress: 'td:nth-child(1)',
 				port: 'td:nth-child(2)',
 				anonymityLevel: 'td:nth-child(6)',
 			},
-			nextLink: '#main table .pagination span.current + span a',
+			nextLink: '#main ul.pagination > li:nth-last-child(2) > a',
 		},
 		parseAttributes: {
-			ipAddress: function(ipAddress) {
-				var match = ipAddress.match(/([^)]+)$/);
-				return match && match[1] || null;
-			},
 			port: function(port) {
 				port = parseInt(port);
 				if (_.isNaN(port)) return null;

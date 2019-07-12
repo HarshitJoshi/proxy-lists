@@ -20,13 +20,12 @@ module.exports = {
 	config: {
 		feeds: [
 			{
+				url: 'http://www.proxylists.net/proxylists.xml',
 				requestOptions: {
-					url: 'http://www.proxylists.net/proxylists.xml',
 					headers: {
 						'Accept': 'application/xml',
 						'Host': 'www.proxylists.net',
-						'User-Agent': 'Mozilla/5.0 Chrome/70.0.3000.60',
-					}
+					},
 				},
 				paths: {
 					group: 'rss/channel/0/item',

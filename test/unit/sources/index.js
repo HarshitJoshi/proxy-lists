@@ -7,12 +7,21 @@ var ProxyLists = require('../../../index');
 
 describe('source.getProxies([options, ]cb)', function() {
 
-	_.each(ProxyLists.sourcer.sources, function(source, name) {
+	var sourceNames = (process.env.SOURCES && process.env.SOURCES.split(',')) || null;
 
-		describe('source.' + name, function() {
+	var sources = _.chain(ProxyLists.sourcer.sources).map(function(source, name) {
+		source = _.clone(source);
+		source.name = name;
+		return source;
+	}).filter(function(source) {
+		return !sourceNames || _.contains(sourceNames, source.name);
+	}).value();
 
-			it('should be a function', function() {
+	_.each(sources, function(source) {
 
+		describe('source.' + source.name, function() {
+
+			it('"getProxies" function exists', function() {
 				expect(source.getProxies).to.be.a('function');
 			});
 
@@ -23,36 +32,12 @@ describe('source.getProxies([options, ]cb)', function() {
 					return this.skip();
 				}
 
-				var options = {};
-
-				switch (name) {
-
-					case 'bitproxies':
-						if (!process.env.PROXY_LISTS_BITPROXIES_API_KEY) {
-							console.log('Skipping this test because bitproxies API key was not found.');
-							return this.skip();
-						}
-						options.bitproxies = {};
-						options.bitproxies.apiKey = process.env.PROXY_LISTS_BITPROXIES_API_KEY;
-						break;
-
-					case 'kingproxies':
-						if (!process.env.PROXY_LISTS_KINGPROXIES_API_KEY) {
-							console.log('Skipping this test because kingproxies API key was not found.');
-							return this.skip();
-						}
-						options.kingproxies = {};
-						options.kingproxies.apiKey = process.env.PROXY_LISTS_KINGPROXIES_API_KEY;
-						break;
-				}
-
 				this.timeout(30000);
 
 				// Don't validate IP addresses for some sources.
-				var validateIp = ['bitproxies', 'kingproxies'].indexOf(name) === -1;
+				var validateIp = ['bitproxies'].indexOf(source.name) === -1;
 
 				function isValidProxy(proxy) {
-
 					return ProxyLists.isValidProxy(proxy, {
 						validateIp: validateIp
 					});
@@ -60,55 +45,42 @@ describe('source.getProxies([options, ]cb)', function() {
 
 				var gotProxies = false;
 				var cb = _.once(function(error) {
-
-					if (error) {
-						return done(error);
-					}
-
-					if (!gotProxies) {
-						return done(new Error('Expected to get some proxies.'));
-					}
-
+					if (error) return done(error);
+					if (!gotProxies) return done(new Error('Scraped zero proxies!'));
 					done();
 				});
 
+				var options = { sourceOptions: {} };
+				switch (source.name) {
+					case 'bitproxies':
+						options.sourceOptions.bitproxies = { apiKey: 'TEST_API_KEY' };
+						break;
+				}
 				options = _.extend(options, {
-					anonymityLevels: ['anonymous', 'elite', 'transparent'],
-					protocols: ['http', 'https', 'socks4', 'socks5'],
-					sample: true
+					filterMode: 'loose',
+					countries: null,
+					anonymityLevels: null,
+					protocols: null,
+					sample: true,
 				});
 
-				ProxyLists.getProxiesFromSource(name, options)
+				ProxyLists.getProxiesFromSource(source.name, options)
 					.on('data', function(proxies) {
-
 						gotProxies = true;
-
 						var invalidProxies = [];
-
 						try {
-
 							expect(proxies).to.be.an('array');
-
-							if (!(proxies.length > 0)) {
-								throw new Error('Expected at least one proxy.');
-							}
-							_.each(proxies, function(proxy) {
-								try {
-									expect(isValidProxy(proxy)).to.equal(true);
-								} catch (error) {
-									invalidProxies.push(proxy);
-								}
+							expect(proxies).to.not.have.length(0);
+							var invalidProxies = _.reject(proxies, function(proxy) {
+								return isValidProxy(proxy);
 							});
-
 							var percentInvalid = (invalidProxies.length / proxies.length) * 100;
-
 							// Allow up to 40% of the proxies to be invalid.
 							if (percentInvalid > 40) {
 								// Print up to 10 invalid proxies for debugging.
 								console.log(invalidProxies.slice(0, Math.min(10, invalidProxies.length)));
-								throw new Error('Too many invalid proxies from source: "' + name + '"');
+								throw new Error('Too many invalid proxies from source: "' + source.name + '"');
 							}
-
 						} catch (error) {
 							return cb(error);
 						}

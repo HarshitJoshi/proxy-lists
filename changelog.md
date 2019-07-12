@@ -1,5 +1,17 @@
 # Changelog
 
+* TBD:
+  * CLI:
+    * `--output-file` and `--log-file` can now accept absolute file paths
+* v1.18.0:
+  * Fixed more sources
+  * CLI tool now exits properly
+  * No end event issue should be resolved - see [#90](https://github.com/chill117/proxy-lists/issues/90)
+* v1.17.0:
+  * Fixed sources
+  * Can now use mixed upper/lower casing for filter options - see [#92](https://github.com/chill117/proxy-lists/issues/92) for more details
+* v1.16.1:
+  * Updated dependencies (vulnerability warnings)
 * v1.16.0:
   * Fixed-up several sources, getting anonymityLevel and protocols where possible.
 * v1.15.0:
